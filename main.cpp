@@ -133,30 +133,26 @@ public:
         return _day < other._day;
     }
     
+    // Helper method to calculate the total number of days from a fixed point
+    long long totalDays() const {
+        long long days = 0;
+        // Add days for complete years
+        for (int y = 1900; y < _year; y++) {
+            days += isLeapYear(y) ? 366 : 365;
+        }
+        // Add days for complete months in the current year
+        for (int m = 1; m < _month; m++) {
+            days += getDaysInMonth(_year, m);
+        }
+        // Add days
+        days += _day;
+        return days;
+    }
+    
     // Subtract dates: d1 - d2 (absolute difference in days)
     int operator-(const Date& other) const {
-        // Create copies of the dates
-        Date d1 = *this;
-        Date d2 = other;
-        
-        // Count the days between the two dates
-        int count = 0;
-        
-        // If d1 is later than d2, count backwards
-        while (d1._year > d2._year || (d1._year == d2._year && d1._month > d2._month) || 
-               (d1._year == d2._year && d1._month == d2._month && d1._day > d2._day)) {
-            --d1;
-            count++;
-        }
-        
-        // If d1 is earlier than d2, count forwards
-        while (d1._year < d2._year || (d1._year == d2._year && d1._month < d2._month) || 
-               (d1._year == d2._year && d1._month == d2._month && d1._day < d2._day)) {
-            ++d1;
-            count++;
-        }
-        
-        return count;
+        long long diff = totalDays() - other.totalDays();
+        return diff >= 0 ? diff : -diff;
     }
     
     // Output operator
