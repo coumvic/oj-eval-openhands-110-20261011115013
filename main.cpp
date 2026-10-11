@@ -22,18 +22,7 @@ private:
         if (year < 1900 || year > 2030 || month < 1 || month > 12 || day < 1)
             return false;
         
-        int maxDays = month_days[month];
-        if (month == 2 && isLeapYear(year))
-            maxDays = 29;
-            
-        return day <= maxDays;
-    }
-    
-    // Get the number of days in a month
-    int daysInMonth(int year, int month) const {
-        if (month == 2 && isLeapYear(year))
-            return 29;
-        return month_days[month];
+        return day <= getDaysInMonth(year, month);
     }
     
     // Convert date to total days since a reference point
@@ -45,7 +34,7 @@ private:
         }
         // Add days for months
         for (int m = 1; m < _month; m++) {
-            days += daysInMonth(_year, m);
+            days += getDaysInMonth(_year, m);
         }
         // Add days
         days += _day;
@@ -61,8 +50,8 @@ private:
         }
         
         _month = 1;
-        while (totalDays > daysInMonth(_year, _month)) {
-            totalDays -= daysInMonth(_year, _month);
+        while (totalDays > getDaysInMonth(_year, _month)) {
+            totalDays -= getDaysInMonth(_year, _month);
             _month++;
         }
         
@@ -85,10 +74,24 @@ public:
         }
     }
     
+    // Helper method to get days in month
+    int getDaysInMonth(int year, int month) const {
+        if (month == 2 && isLeapYear(year))
+            return 29;
+        return month_days[month];
+    }
+    
     // Pre-increment: ++d
     Date& operator++() {
-        long long days = toDays() + 1;
-        fromDays(days);
+        _day++;
+        if (_day > getDaysInMonth(_year, _month)) {
+            _day = 1;
+            _month++;
+            if (_month > 12) {
+                _month = 1;
+                _year++;
+            }
+        }
         return *this;
     }
     
@@ -101,8 +104,15 @@ public:
     
     // Pre-decrement: --d
     Date& operator--() {
-        long long days = toDays() - 1;
-        fromDays(days);
+        _day--;
+        if (_day < 1) {
+            _month--;
+            if (_month < 1) {
+                _month = 12;
+                _year--;
+            }
+            _day = getDaysInMonth(_year, _month);
+        }
         return *this;
     }
     
