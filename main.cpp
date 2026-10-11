@@ -25,38 +25,7 @@ private:
         return day <= getDaysInMonth(year, month);
     }
     
-    // Convert date to total days since a reference point
-    long long toDays() const {
-        long long days = 0;
-        // Add days for years
-        for (int y = 1900; y < _year; y++) {
-            days += isLeapYear(y) ? 366 : 365;
-        }
-        // Add days for months
-        for (int m = 1; m < _month; m++) {
-            days += getDaysInMonth(_year, m);
-        }
-        // Add days
-        days += _day;
-        return days;
-    }
-    
-    // Convert total days to date
-    void fromDays(long long totalDays) {
-        _year = 1900;
-        while (totalDays > (isLeapYear(_year) ? 366 : 365)) {
-            totalDays -= (isLeapYear(_year) ? 366 : 365);
-            _year++;
-        }
-        
-        _month = 1;
-        while (totalDays > getDaysInMonth(_year, _month)) {
-            totalDays -= getDaysInMonth(_year, _month);
-            _month++;
-        }
-        
-        _day = totalDays;
-    }
+
 
 public:
     // Constructor
@@ -126,17 +95,33 @@ public:
     // Add days: d + n
     Date operator+(int days) const {
         Date result = *this;
-        long long totalDays = result.toDays() + days;
-        result.fromDays(totalDays);
+        result._day += days;
+        
+        // Normalize the date
+        while (result._day > result.getDaysInMonth(result._year, result._month)) {
+            result._day -= result.getDaysInMonth(result._year, result._month);
+            result._month++;
+            if (result._month > 12) {
+                result._month = 1;
+                result._year++;
+            }
+        }
+        
+        while (result._day < 1) {
+            result._month--;
+            if (result._month < 1) {
+                result._month = 12;
+                result._year--;
+            }
+            result._day += result.getDaysInMonth(result._year, result._month);
+        }
+        
         return result;
     }
     
     // Subtract days: d - n
     Date operator-(int days) const {
-        Date result = *this;
-        long long totalDays = result.toDays() - days;
-        result.fromDays(totalDays);
-        return result;
+        return *this + (-days);
     }
     
     // Compare: d1 < d2
@@ -150,8 +135,28 @@ public:
     
     // Subtract dates: d1 - d2 (absolute difference in days)
     int operator-(const Date& other) const {
-        long long diff = toDays() - other.toDays();
-        return diff > 0 ? diff : -diff;
+        // Create copies of the dates
+        Date d1 = *this;
+        Date d2 = other;
+        
+        // Count the days between the two dates
+        int count = 0;
+        
+        // If d1 is later than d2, count backwards
+        while (d1._year > d2._year || (d1._year == d2._year && d1._month > d2._month) || 
+               (d1._year == d2._year && d1._month == d2._month && d1._day > d2._day)) {
+            --d1;
+            count++;
+        }
+        
+        // If d1 is earlier than d2, count forwards
+        while (d1._year < d2._year || (d1._year == d2._year && d1._month < d2._month) || 
+               (d1._year == d2._year && d1._month == d2._month && d1._day < d2._day)) {
+            ++d1;
+            count++;
+        }
+        
+        return count;
     }
     
     // Output operator
